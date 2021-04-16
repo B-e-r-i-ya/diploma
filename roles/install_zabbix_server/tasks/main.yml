@@ -1,0 +1,100 @@
+---
+# tasks file for install_zabbix_server
+
+- name: install zabbix server postgresql12 for RedHat
+  block:
+  - name: Устанавливаем repo
+    yum:
+      name: "{{ item }}"
+      state: latest
+    loop:
+      - https://repo.zabbix.com/zabbix/5.0/rhel/7/x86_64/zabbix-release-5.0-1.el7.noarch.rpm
+      - https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+  - shell: yum clean all
+
+  - copy:
+      src:  zabbix.repo
+      dest: /etc/yum.repos.d/zabbix.repo
+
+  - name: Устанавливаем пакеты
+    yum:
+      name: "{{ item }}"
+      state: latest
+    loop:
+      - zabbix-server-pgsql
+      - zabbix-agent
+      - centos-release-scl
+      - postgresql12-server
+      - zabbix-web-pgsql-scl
+      - zabbix-nginx-conf-scl
+      - python-psycopg2
+      - nginx
+      - php-bcmath
+      - php-mbstring
+      #- php-gb
+      - php-xmlwriter
+      - php-xmlreader
+
+  - name: Стартуем pgsql-12
+    shell: /usr/pgsql-12/bin/postgresql-12-setup initdb
+  - systemd:
+      state: started
+      enabled: yes
+      name: "{{ item }}"
+    loop:
+      - postgresql-12
+
+  - name: Database is created
+    become: yes
+    become_user: postgres
+    community.postgresql.postgresql_db: 
+      name: zabbix
+      encoding: 'UTF-8'
+      lc_collate: 'en_US.UTF-8'
+      lc_ctype: 'en_US.UTF-8'
+      template: 'template0'
+      state: present
+
+  - name: Ensure user has access to the database
+    become: yes
+    become_user: postgres
+    community.postgresql.postgresql_user: 
+      db: zabbix
+      name: zabbix
+      password: zzz3zed
+      priv: ALL
+      state: present
+
+  - name: The same as above by playbook
+    become: yes
+    become_user: postgres
+    community.postgresql.postgresql_owner:
+      db: zabbix
+      new_owner: zabbix
+
+  - name: Create schema zabbix
+    #become: yes
+    #become_user: postgres
+    #community.postgresql.postgresql_schema: 
+    #  db: zabbix
+    #  login_user: zabbix
+    #  login_password: zzz3zed
+    #  name: zabbix
+    shell: sudo -u zabbix psql -c "create schema zabbix;"
+  - shell: sudo -u zabbix psql -c "ALTER ROLE zabbix SET search_path = zabbix;"
+  - shell: zcat /usr/share/doc/zabbix-server-pgsql*/create.sql.gz | sudo -u zabbix psql zabbix
+
+  - name: Настраиваем NGINX
+    copy:
+      src:  nginx_zabbix.conf
+      dest: /etc/opt/rh/rh-nginx116/nginx/conf.d/zabbix.conf
+
+  - name: Настраиваем PHP
+    copy:
+      src: php_zabbix.conf
+      dest: /etc/opt/rh/rh-php72/php-fpm.d/zabbix.conf
+  - shell: systemctl restart zabbix-server zabbix-agent rh-nginx116-nginx rh-php72-php-fpm
+  - shell: systemctl enable zabbix-server zabbix-agent rh-nginx116-nginx rh-php72-php-fpm
+
+    #when: "{{ sql }} == psql"
+  when: ansible_os_family == "RedHat"

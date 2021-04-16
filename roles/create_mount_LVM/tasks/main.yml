@@ -1,0 +1,33 @@
+---
+# tasks file for ./roles/create_mount_LVM
+- block:
+  - name: Install lvm2
+    yum:
+     name: lvm2
+     state: latest
+
+  - name: Создаем lvm диск
+    lvg:
+      vg: "{{ vg_name }}"
+      pvs: "{{ dev_data }}"
+      #state: absent
+  - lvol:
+      vg: "{{ vg_name }}"
+      lv: "{{ lv_name }}"
+      size: "{{ lv_size }}"
+  - name: Форматирование в xfs LVM раздела
+    filesystem:
+      fstype: xfs
+      dev: /dev/{{ vg_name }}/{{ lv_name }}
+
+  - name: Монтирование LVM раздела
+    shell: blkid|grep /dev/mapper/{{ vg_name }}-{{ lv_name }}|awk '{printf($2)}'|sed 's/"//g'
+    register: uid
+  - mount:
+      path: "{{ lvm_path_data }}"
+      src: "{{ uid.stdout_lines }}"
+      fstype: xfs
+      state: present
+
+  when: ansible_os_family == "RedHat"     
+#  when: "{{ lvm_create }} == true"

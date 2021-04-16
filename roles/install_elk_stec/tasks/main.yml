@@ -1,0 +1,133 @@
+---
+# tasks file for elk_install
+- name: Install ELK for RedHat
+  block:
+  
+  - name: rpm key
+    shell: rpm --import https://packages.elastic.co/GPG-KEY-elasticsearch
+ 
+  - name: install repo
+    copy:
+      src: elastic.repo
+      dest: /etc/yum.repos.d/elastic.repo
+      owner: root
+      group: root
+      mode: '0644'
+
+  - name: Install packages
+    yum:
+      name: "{{ item }}"
+      state: present
+    loop:
+      - java-1.7.0-openjdk
+  
+  - block:
+    - name: Install elasticsearch
+      block:
+      - name: Install packages
+        yum:
+         name: "{{ item }}"
+         state: present
+        loop:
+          - elasticsearch
+        notify:
+          - startup_elastic
+
+      - name: Создаем lvm диск
+        block:  
+        
+        - lvg:
+            vg: "{{ vg_name }}"
+            pvs: "{{ dev_data }}"
+            #state: absent
+
+        - lvol:
+            vg: "{{ vg_name }}"
+            lv: "{{ lv_name }}"
+            size: "{{ lv_size }}"
+
+        - name: Форматирование в xfs LVM раздела
+          filesystem:
+            fstype: xfs
+            dev: /dev/{{ vg_name }}/{{ lv_name }}
+
+        - name: Монтирование LVM раздела
+          shell: blkid|grep /dev/mapper/{{ vg_name }}-{{ lv_name }}|awk '{printf($2)}'|sed 's/"//g'
+          register: uid
+        - mount:
+            path: "{{ elasticsearch_path_data }}"
+            src: "{{ uid.stdout_lines }}"
+            fstype: xfs
+            state: present
+        
+        when: "{{ lvm_create }} == true"
+
+      
+      - name: Конфигурируем elasticsearch
+        template:
+            src: elasticsearch.yml.j2
+            dest: /etc/elasticsearch/elasticsearch.yml
+            owner: root
+            group: elasticsearch
+            mode: 0660
+        notify:
+          - restart_elastic
+
+
+      when: ansible_hostname == "{{ elasticsearch_host }}"
+
+    - name: Install logstash
+      block:
+      - yum:
+         name: "{{ item }}"
+         state: present
+        loop:
+          - logstash
+        notify:
+          - startup_logstash
+      
+      - name: Конфигурируем logstash
+        template:
+            src: logstash.yml.j2
+            dest: /etc/logstash/logstash.yml
+            owner: root
+            group: root
+            mode: 0655
+        notify:
+          - restart_logstash
+
+      when: ansible_hostname == "{{ logstash_host }}"
+
+    - name: Install Kibana
+      block:
+      - yum:
+         name: "{{ item }}"
+         state: present
+        loop:
+          - kibana
+        notify:
+          - startup_kibana
+      
+      - name: Конфигурируем kibana
+        template:
+            src: logstash.yml.j2
+            dest: /etc/logstash/logstash.yml
+            owner: root
+            group: kibana
+            mode: 0660
+        notify:
+          - restart_kibana
+
+      when: ansible_hostname == "{{ kibana_host }}"
+
+  #- name: Open port for E
+  #  firewalld:
+  #    port: "{{ item }}" 
+  #    permanent: yes
+  #    state: enabled
+  #  loop:
+  #    - 5601/tcp
+  #    - 5044/tcp
+
+
+  when: ansible_os_family == "RedHat"

@@ -1,0 +1,33 @@
+---
+# handlers file for install_nginx
+- name: startup_nginx
+  systemd:
+    state: started
+    enabled: yes
+    name: "{{ item }}"
+  loop:
+    - nginx
+
+- name: startup_php-fpm
+  systemd:
+    state: started
+    enabled: yes
+    name: "{{ item }}"
+  loop:
+    - php-fpm
+
+- name: restart_nginx
+  systemd:
+    state: restarted
+    name: "{{ item }}"
+  loop:
+    - nginx
+
+- name: restart_php-fpm
+  systemd:
+    state: restarted
+    name: "{{ item }}"
+  loop:
+    - php-fpm
+
+

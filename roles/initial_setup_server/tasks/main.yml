@@ -1,0 +1,23 @@
+---
+# tasks file for initial_setup_server
+- name: Install RedHat
+  block:
+  - name: Install epel release
+    yum_repository:
+      name: epel
+      description: epel repo
+      baseurl: https://download.fedoraproject.org/pub/epel/$releasever/$basearch/
+      gpgcheck: no
+
+  - name: Install packeg
+    yum:
+      name: "{{ item }}"
+      state: latest
+    loop:
+      - policycoreutils-python
+      - mc
+      - tzdata
+
+  - name: time zone
+    shell: timedatectl set-timezone Asia/Bangkok
+  when: ansible_os_family == "RedHat"

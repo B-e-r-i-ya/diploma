@@ -1,0 +1,6 @@
+---
+# defaults file for FTP_server_install
+log_file: /var/log/vsftpd.log
+user_list_root: /etc/vsftpd/chroot_list
+user_list: /etc/vsftpd/user_list
+user_config_dir: /mnt/data/users

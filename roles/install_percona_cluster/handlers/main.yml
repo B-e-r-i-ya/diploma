@@ -1,0 +1,17 @@
+---
+# handlers file for percona_cluster_install
+- name: startup_mysql
+  systemd:
+    state: started
+    enabled: yes
+    name: "{{ item }}"
+  loop:
+    - mysql
+
+- name: stop_mysql
+  systemd:
+    state: stopped
+    enabled: yes
+    name: "{{ item }}"
+  loop:
+    - mysql

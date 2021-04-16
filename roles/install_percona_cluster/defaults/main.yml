@@ -1,0 +1,9 @@
+---
+# defaults file for percona_cluster_install
+rootPass: HD15dS # Новый пароль пользователя root DB
+masternode: pxc1
+ip_nods: 192.168.50.21,192.168.50.22,192.168.50.23
+cluster_name: diplom.cluster
+sstuser: sstuser
+sstpass: s3cret
+

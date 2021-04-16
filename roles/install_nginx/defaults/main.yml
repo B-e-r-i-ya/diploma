@@ -1,0 +1,7 @@
+---
+# defaults file for install_nginx
+#dir_for_site: /var/www/html/default
+user: nginx #пользователь от чьего имени запускать
+quantity_cp: auto # Колличество процессоров
+worker_connections: 1024 #Колличество подключений на процесс
+access_log_file: /var/log/nginx/access.log

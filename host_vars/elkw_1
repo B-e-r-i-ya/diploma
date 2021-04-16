@@ -1,0 +1,5 @@
+dev_data: /dev/sdb 
+vg_name: elastic
+lv_name: elastic_data
+lv_size: 100%FREE 
+elasticsearch_path_data: /var/lib/elasticsearch

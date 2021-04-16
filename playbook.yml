@@ -1,0 +1,40 @@
+---
+- hosts: nginx
+  become: true
+  roles:
+   - roles/initial_setup_server
+   - roles/install_nginx
+   #- roles/install_nextcloud
+
+- hosts: 
+    - pxc1
+    - pxc2
+    - pxc3
+  become: true
+  roles:
+   - roles/initial_setup_server
+   - roles/create_mount_LVM
+   - roles/install_percona_cluster
+
+- hosts: 
+    - prxsql1
+    
+  become: true
+  roles:
+   - roles/initial_setup_server
+   - roles/install_sql_proxy
+
+- hosts:
+    - zbx
+  become: true
+  roles:
+    - roles/initial_setup_server
+    - roles/install_php72
+    - roles/install_zabbix_server
+
+- hosts:
+    - cloud1
+  become: true
+  roles:
+    - roles/initial_setup_server
+    - roles/install_nextcloud

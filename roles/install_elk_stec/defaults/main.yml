@@ -1,0 +1,19 @@
+---
+# defaults file for elk_install
+# defaults значение переменных роли, переопределяются в host_vars или в playbook
+elasticsearch_host:       "{{ ansible_hostname }}"
+logstash_host:            "{{ ansible_hostname }}"
+kibana_host:              "{{ ansible_hostname }}"
+#============== LVM ==============================
+lvm_create:               false                     #=== false елли не нужно создавать lvm раздел для хранения данных elastic
+dev_data:                 /dev/sdb                  #=== имя устройства, допустимо указывать несколько дисков через запятую(/dev/sda,/deb/sdb)
+vg_name:                  VG_LVM                    #=== имя вольюм групы лвм 
+lv_name:                  LV_LVM                    #=== имя создаваемого устройства 
+lv_size:                  100%FREE                  #=== 100%FREE - весь объем диска, 512g - размер в Гигабайтах, 512m - в мегабайтах ...
+#============== Settings elastic =================
+elasticsearch_path_data: /var/lib/elasticsearch     #=== директория для данных elasticsearch
+elasticsearch_path_logs: /var/log/elasticsearch     #=== директория для логов elasticsearch
+
+#============== Settings logstash ================
+
+#============== Settings kibana ==================

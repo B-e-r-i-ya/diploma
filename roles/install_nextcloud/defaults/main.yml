@@ -1,0 +1,4 @@
+---
+# defaults file for install_nextcloud
+url_wget_nextcloud: https://download.nextcloud.com/server/releases/nextcloud-20.0.5.zip
+dir_nextcloud: /usr/share/nginx/html/nextcloud

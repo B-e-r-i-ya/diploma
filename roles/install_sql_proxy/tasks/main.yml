@@ -1,0 +1,34 @@
+---
+# tasks file for install_sql_proxy
+- name: install_sql_proxy for RedHat
+  block:
+
+  - name: Устанавливаем репозиторий percona
+    shell: yum install -y https://repo.percona.com/yum/percona-release-latest.noarch.rpm
+
+  - yum_repository:
+      name: epel
+      description: epel repo
+      baseurl: https://download.fedoraproject.org/pub/epel/$releasever/$basearch/
+      gpgcheck: no
+
+  - name: 
+    firewalld:
+      port: "{{ item }}"
+      permanent: yes
+      state: enabled
+    loop:
+      - 3306/tcp
+      - 4444/tcp
+      - 4567/tcp
+      - 4568/tcp
+
+  - name: Install packeg
+    yum:
+      name: "{{ item }}"
+      state: latest
+    loop:
+      - Percona-XtraDB-Cluster-client-55
+      - proxysql2
+
+  when: ansible_os_family == "RedHat"

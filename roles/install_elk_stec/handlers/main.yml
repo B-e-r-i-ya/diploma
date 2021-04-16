@@ -1,0 +1,68 @@
+---
+# handlers file for elk_install
+
+- name: startup_elastic
+  systemd:
+    state: started
+    enabled: yes
+    name: "{{ item }}"
+  loop:
+    - elasticsearch
+
+- name: startup_logstash
+  systemd:
+    state: started
+    enabled: yes
+    name: "{{ item }}"
+  loop:
+    - logstash
+
+- name: startup_kibana
+  systemd:
+    state: started
+    enabled: yes
+    name: "{{ item }}"
+  loop:
+    - kibana
+
+- name: restart_elastic
+  systemd:
+    state: restarted
+    name: "{{ item }}"
+  loop:
+    - elasticsearch
+
+- name: restart_kibana
+  systemd:
+    state: restarted
+    name: "{{ item }}"
+  loop:
+    - kibana
+
+- name: restart_logstash
+  systemd:
+    state: restarted
+    name: "{{ item }}"
+  loop:
+    - logstash
+
+- name: stop_elastic
+  systemd:
+    state: stopped
+    name: "{{ item }}"
+  loop:
+    - elasticsearch
+
+- name: stop_kibana
+  systemd:
+    state: stopped
+    name: "{{ item }}"
+  loop:
+    - kibana
+
+- name: stop_logstash
+  systemd:
+    state: stopped
+    name: "{{ item }}"
+  loop:
+    - logstash

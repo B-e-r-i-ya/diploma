@@ -1,0 +1,5 @@
+---
+# defaults file for zabbix_agent_install
+
+zabbix_server_ip: 192.168.125.59 #IP адрес zabbix сервера или прокси
+type: SERV #тип машины ARM - рабочая станция SERV - сервер

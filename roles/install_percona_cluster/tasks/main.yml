@@ -1,0 +1,91 @@
+---
+# tasks file for percona_cluster_install
+  - name: Disable SELinux
+    selinux:
+      policy: targeted
+      state: permissive
+
+  - name: Устанавливаем репозиторий percona
+    shell: yum install -y https://repo.percona.com/yum/percona-release-latest.noarch.rpm
+
+  - yum_repository:
+      name: epel
+      description: epel repo
+      baseurl: https://download.fedoraproject.org/pub/epel/$releasever/$basearch/
+      gpgcheck: no
+
+  - name: 
+    firewalld:
+      port: "{{ item }}"
+      permanent: yes
+      state: enabled
+    loop:
+      - 3306/tcp
+      - 4444/tcp
+      - 4567/tcp
+      - 4568/tcp
+
+  - name: Разрешаем порт selinux
+    seport:
+      ports: "{{ item }}"
+      proto: tcp
+      setype: mysqld_port_t
+      state: present
+    loop:
+      - 3306
+      - 4444
+      - 4567
+      - 4568
+
+  - name: Copy a new "ntp.conf" file into place, backing up the original if it differs from the copied version
+    copy:
+      src: percona-pxc-56-cluster.pp
+      dest: /tmp/percona-pxc-56-cluster.pp
+  #- shell: semodule -i /tmp/percona-pxc-56-cluster.pp
+
+  - name: Install MySQL
+    yum:
+      name: Percona-XtraDB-Cluster-55
+      state: latest
+
+  - name: startup_mysql
+    systemd:
+      state: started
+      enabled: yes
+      name: "{{ item }}"
+    loop:
+      - mysql
+
+  - name: Меняем пароль root mysql
+    shell: mysql -e "SET PASSWORD = PASSWORD('"{{ rootPass }}"'); CREATE USER '"{{ sstuser }}"'@'localhost' IDENTIFIED BY '"{{ sstpass }}"'; GRANT RELOAD, LOCK TABLES, REPLICATION CLIENT ON *.* TO '"{{ sstuser }}"'@'localhost';"
+
+  - name: stop_mysql
+    systemd:
+      state: stopped
+      enabled: yes
+      name: "{{ item }}"
+    loop:
+      - mysql
+
+  - name: Конфигурируем MySQL
+    template:
+      src: my.cnf.j2
+      dest: /etc/my.cnf
+      mode: '0644'
+
+  - block:
+    - name: startup_mysql_masternode
+      shell: rm -f /var/lib/mysql/ib_logfile* && systemctl start mysql@bootstrap.service
+
+    when: "ansible_hostname ==  masternode"
+
+  - block:
+    - name: startup_mysql
+      systemd:
+        state: started
+        enabled: yes
+        name: "{{ item }}"
+      loop:
+        - mysql
+    when: "ansible_hostname !=  masternode"
+  

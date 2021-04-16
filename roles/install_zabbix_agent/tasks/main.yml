@@ -1,0 +1,20 @@
+---
+# tasks file for zabbix_agent_install
+
+- name: Если Debian
+  block:
+  - name: добаляем репозиторий 
+    shell: rpm -Uvh https://repo.zabbix.com/zabbix/5.0/rhel/7/x86_64/zabbix-agent-5.0.0-1.el7.x86_64.rpm
+  - name: устанавливаем агент
+    yum:
+      name: zabbix-agent
+      state: latest
+  - template:
+    src: 'zabbix_agentd.conf.j2'
+    dest: '/etc/zabbix/zabbix_agentd.conf'
+  when: ansible_os_family == "Debian"
+
+- name: Если RedHat
+  block:
+   
+  when: ansible_os_family == "RedHat"

@@ -1,0 +1,115 @@
+---
+# tasks file for install_nextcloud
+- block:
+
+  - shell: yum install -y epel-release
+  - name:  Configuration Firewalld 
+    firewalld:
+      service: "{{ item }}"
+      permanent: yes
+      state: enabled
+    loop:
+      - https
+      - http
+    
+  - name: Install repo nginx
+    copy:
+      src: nginx.repo
+      dest: /etc/yum.repos.d/nginx.repo
+
+  - name: Install repo php73
+    shell: rpm -Uvh http://rpms.remirepo.net/enterprise/remi-release-7.rpm && yum-config-manager --enable remi-php73
+
+  - name: Install packages
+    yum:
+      name: "{{ item }}"
+      state: present
+    loop:
+      - net-tools
+      - python-pip
+      - yum-utils
+      - unzip
+      - curl
+      - wget
+      - bash-completion
+      - policycoreutils-python
+      - mlocate
+      - bzip2
+      - nginx
+      - php-cli
+      - php-common
+      - php-curl
+      - php-gd
+      - php-mbstring
+      - php-mysqlnd
+      - php-process
+      - php-xml
+      - php-zip
+      - php-opcache
+      - php-pecl-apcu
+      - php-intl
+      - php-pecl-redis
+      - php-pecl-imagick
+      - php-fpm
+
+  - name: startup_elastic
+    systemd:
+      state: started
+      enabled: yes
+      name: "{{ item }}"
+    loop:
+      - nginx
+      - php-fpm
+
+  - name: Backup config
+    shell: mv /etc/php-fpm.d/www.conf /etc/php-fpm.d/www.conf.backup
+  - shell: mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.backup
+
+  - name: Configuration php
+    copy:
+      src: www.conf
+      dest: /etc/php-fpm.d/www.conf
+
+  - shell: mkdir /etc/nginx/ssl
+  - shell: pip install --upgrade "pip < 21.0"
+  - shell: pip install cryptography
+
+  #- name: Generate a Self Signed OpenSSL certificate
+  #  openssl_certificate:
+  #    path: /etc/nginx/ssl/server.crt
+  #    privatekey_path: /etc/nginx/ssl/cert.pem
+  #    csr_path: /etc/nginx/ssl/server.csr
+  #    provider: selfsigned
+
+  - name: Generate an OpenSSL Certificate Signing Request with Subject information
+    openssl_csr:
+      path: "/etc/nginx/ssl/server.crt"
+      privatekey_path: "/etc/nginx/ssl/cert.pem"
+      country_name: "RU"
+      organization_name: "TEST"
+      email_address: "CnbktnV@gmail.com"
+      common_name: "192.168.112.151"
+
+  - name: Configuration nginx
+    copy:
+      src: nginx.conf
+      dest: /etc/nginx/nginx.conf
+
+  - name: Install nextcloud
+    shell: wget https://download.nextcloud.com/server/releases/latest.zip
+  - shell: unzip latest.zip -d /var/www/
+  - shell: rm -f latest.zip
+
+  - shell: chmod 755 /var/www/nextcloud
+  - shell: chown -R nginx:nginx /var/www/nextcloud
+
+  - name: startup_elastic
+    systemd:
+      state: restart
+      name: "{{ item }}"
+    loop:
+      - nginx
+      - php-fpm
+
+
+  when: ansible_os_family == "RedHat"

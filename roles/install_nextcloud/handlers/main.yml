@@ -1,0 +1,9 @@
+---
+# handlers file for install_nextcloud
+
+- name: restart_nginx
+  systemd:
+    state: restarted
+    name: "{{ item }}"
+  loop:
+    - nginx

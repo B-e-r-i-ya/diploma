@@ -1,0 +1,61 @@
+---
+# tasks file for webmin_install
+
+- name: Если RedHat
+  block:
+  - name: Добавляем репозиторий
+    copy:
+      src: webmin.repo
+      dest: /etc/yum.repos.d/webmin.repo
+
+  - name: Импортируем GPG ключ
+    shell: rpm --import http://www.webmin.com/jcameron-key.asc
+
+  - name: Устанавливаем Webmin
+    yum:
+      name: webmin
+      state: latest
+  - name: Правило firewall 10000 порт
+    firewalld:
+      port: 10000/udp
+      permanent: yes
+      state: enabled
+
+  - name: Добавляем службу
+    shell: chkconfig webmin on
+
+  - name:
+    shell: /etc/rc.d/init.d/webmin stop
+
+  - name: Запуск службы webmin
+    firewalld:
+      port: 10000/tcp
+      permanent: true
+      state: enabled
+
+  when: ansible_os_family == "RedHat"
+
+- name: Если Debian
+  block:
+  - name: Добавляем репозиторий
+    shell: echo "deb http://download.webmin.com/download/repository sarge contrib" >> /etc/apt/sources.list
+    shell: echo "deb http://webmin.mirror.somersettechsolutions.co.uk/repository sarge contrib" >> /etc/apt/sources.list
+
+  - name: Импортируем GPG ключ
+    shell: wget http://www.webmin.com/jcameron-key.asc
+    shell: apt-key add jcameron-key.asc
+
+  - name: Обновляем список репозитория
+    shell: apt update
+
+  - name: Устанавливаем Webmin
+    yum:
+      name: webmin
+      state: latest
+
+  - name: Запуск службы webmin
+    systemd:
+      state: started
+      enabled: yes
+      name: webmin
+  when: ansible_os_family == "Debian"
